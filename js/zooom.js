@@ -83,6 +83,7 @@
                         cube.cust_size = delta/2;
                         cube.cust_pos = new THREE.Vector3(cur.x,cur.y, cur.z);
                         cube.cust_spring = {force:0.08};
+                        cube.cust_dir = new THREE.Vector3();
                         cube.lookAt(new THREE.Vector3(Math.random(),Math.random(),Math.random()));
                         parent.add(cube);
                         objs.push(cube);
@@ -258,7 +259,14 @@ var lastColorTime = 0;
            // var dist = Math.sqrt(dist2);
            // console.log(force);
 
-            obj.applyMatrix( new THREE.Matrix4().makeTranslation(distVec.x+distRoot.x,distVec.y+distRoot.y, distVec.z+distRoot.z) );
+            obj.cust_dir = new THREE.Vector3(obj.cust_dir.x+distVec.x+distRoot.x,
+                    obj.cust_dir.y+distVec.y+distRoot.y, obj.cust_dir.z+distVec.z+distRoot.z);
+
+            obj.cust_dir.multiplyScalar(0.9);
+
+            //cube.cust_dir = new THREE.Vector3();
+
+            obj.applyMatrix( new THREE.Matrix4().makeTranslation(obj.cust_dir.x,obj.cust_dir.y,obj.cust_dir.z) );
         }
 
         /*
@@ -291,7 +299,7 @@ var lastColorTime = 0;
         camera.position.y = -200;// THREE.Math.clamp( camera.position.y + ( - ( mouseY - 200 ) - camera.position.y ) * .05, 50, 1000 );
         camera.position.z = 200;
 
-        theta += 0.1;
+        theta += 0.5;
         beta += 0.5;
         gamma -= 0.8;
 
