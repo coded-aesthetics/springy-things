@@ -59,9 +59,9 @@
                     cur = new THREE.Vector3(c.x+delta*x, c.y+delta*y, c.z+delta*z);
                     var doCube = Math.random() < 1.1;
                     if (doCube) {
-                       // var geometry = new THREE.BoxGeometry(delta/2, delta/2, delta/2);
-                        var geometry = new THREE.DodecahedronGeometry( delta  );
-                        //var geometry = new THREE.SphereGeometry( delta, 32,32 );
+                        //var geometry = new THREE.BoxGeometry(delta, delta, delta);
+                        //var geometry = new THREE.DodecahedronGeometry( delta  );
+                        var geometry = new THREE.SphereGeometry( delta, 32,32 );
                        //var geometry = new THREE.OctahedronGeometry( delta*0.707 );
                         //var geometry = new THREE.IcosahedronGeometry( delta*0.707 );
                         var spMat2 = new THREE.MeshPhongMaterial({
@@ -84,7 +84,7 @@
                         cube.cust_pos = new THREE.Vector3(cur.x,cur.y, cur.z);
                         cube.cust_spring = {force:0.08};
                         cube.cust_dir = new THREE.Vector3();
-                        cube.lookAt(new THREE.Vector3(Math.random(),Math.random(),Math.random()));
+                        //cube.lookAt(new THREE.Vector3(Math.random(),Math.random(),Math.random()));
                         parent.add(cube);
                         objs.push(cube);
                     }
@@ -188,7 +188,7 @@
     function jumpPusher() {
         pusher.pos.x = Math.random() * -88.0 + 44.0;
         pusher.pos.y = Math.random() * -88.0 + 44.0;
-        pusher.force = Math.random() * 4200000 + 2000000;
+        pusher.force = (Math.random() * 500000 - 250000)/2.0;
     }
 
     function onMouseDown( event ) {
@@ -205,16 +205,19 @@ var lastColorTime = 0;
         var deltaTime = thisTime - lastTime;
         timePassed += deltaTime;
         delta += 0.1;
-        if (timePassed -lastJumpTime > 5000) {
+        if (timePassed -lastJumpTime > 4000) {
             jumpPusher();
             lastJumpTime = timePassed;
+        }
+        if (timePassed -lastJumpTime > 3000) {
+            pusher.force = 0;
         }
         var changeColors = false;
         if (timePassed -lastColorTime > 15000) {
             changeColors = true;
             lastColorTime = timePassed;
             colors = [];
-            for (var i = 10; i--;) {
+            for (var i = 3; i--;) {
                 colors.push(Math.floor(Math.random()*0xFFFFFF));
             }
         }
@@ -243,7 +246,7 @@ var lastColorTime = 0;
             var distRoot = new THREE.Vector3(root.x-vector.x,root.y-vector.y,root.z-vector.z);
             var dist2 = distVec.x*distVec.x+distVec.y*distVec.y+distVec.z*distVec.z;
             var dist3 = distRoot.x*distRoot.x+distRoot.y*distRoot.y+distRoot.z*distRoot.z;
-            //if (dist2 <= 1) dist2 = 1;
+            if (dist2 <= 600) dist2 = 600;
             //if (dist3 <= 1) dist3 = 1;
             var force1 = pusher.force /** (Math.sin(delta)+1)*/ / dist2;
             if(!toggleGrav) {
@@ -288,7 +291,7 @@ var lastColorTime = 0;
     var oldLookAt = new THREE.Vector3(0,0,0);
     var lookAtDist = new THREE.Vector3(0,0,0);
     var theta = 45;
-    var radius = 400;
+    var radius = 200;
     var radius2 = 100;
     var beta = 33;
     var gamma = 33;
