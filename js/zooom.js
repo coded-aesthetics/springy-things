@@ -105,7 +105,7 @@
             emissive: '#006063',
             shininess: 5
         });
-        for (var i = 10; i--;) {
+        for (var i = 3; i--;) {
             colors.push(Math.floor(Math.random()*0xFFFFFF));
         }
 
