@@ -46,55 +46,22 @@
 		};
 
     var objs = [];
-    var pusher1 = {pos:new THREE.Vector3(-22, -22, 0), force:30000.0, lastJumpTime:0.0, changeInterval:300};
-    var pusher2 = {pos:new THREE.Vector3(40.0, -30.0, 55.0), force:30000.0, lastJumpTime:0.0, changeInterval:777};
-    var pusher3 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:555};
-    var pusher4 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:1111};
-    var pusher5 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:111};
+    var pusher1 = {pos:new THREE.Vector3(-22, -22, 0), force:30000.0, lastJumpTime:0.0, changeInterval:Math.random()*2000.0+500};
+    var pusher2 = {pos:new THREE.Vector3(40.0, -30.0, 55.0), force:30000.0, lastJumpTime:0.0, changeInterval:Math.random()*2000.0+500};
+    var pusher3 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:Math.random()*2000.0+500};
+    var pusher4 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:Math.random()*2000.0+500};
+    var pusher5 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:Math.random()*2000.0+500};
 
-   var pushers = [pusher1, pusher2, pusher3];
+   var pushers = [pusher1, pusher2, pusher3, pusher4, pusher5];
 
     var cubey;
 
-    function buildCube(pos, size, num, parent) {
-        var geometry = new THREE.BoxGeometry( size, size, size, num, num, num );
-        //var geometry = new THREE.SphereGeometry( delta, 32,32 );
-        //var geometry = new THREE.OctahedronGeometry( size );
-        //var geometry = new THREE.IcosahedronGeometry( delta*0.707 );
-        var spMat2 = new THREE.MeshPhongMaterial({
-            // light
-            specular: '#1001aa',
-            // intermediate
-            color: '#1001ff',
-            // dark
-            emissive: '#006063',
-            shininess: 5
-        });
-        //var spMat2 = new THREE.MeshLambertMaterial({color: colors[Math.floor(Math.random()*10)]});
-        spMat2.shading = THREE.NoShading;
-        spMat2.emissive.setHex( colors[Math.floor(Math.random()*10)] );
-
-        var cube = new THREE.Mesh(geometry, spMat2);
-
-        parent.add(cube);
-
-        for (var b = geometry.vertices.length; b--;) {
-            var cur = geometry.vertices[b];
-            cur.cust_pos = new THREE.Vector3(cur.x, cur.y, cur.z);
-            cur.cust_dir = new THREE.Vector3();
-            cur.cust_spring = {force:0.08};
-        }
-        objs = geometry.vertices;
-        geometry.dynamic = true;
-
-        cubey = cube;
-    }
     var particleSystem;
     var verts;
 
     function cubeSystem(pos, size, num, parent) {
         // create the particle variables
-        var particleCount = 1500,
+        var particleCount = 2500,
             particles = new THREE.Geometry(),
         // create the particle variables
             pMaterial = new THREE.PointCloudMaterial({
@@ -103,6 +70,7 @@
             map: THREE.ImageUtils.loadTexture(
                 "img/particle.png"
             ),
+            vertexColors: THREE.VertexColors,
             blending: THREE.AdditiveBlending,
             transparent: true
         });
@@ -116,6 +84,7 @@
         // now create the individual particles
         for (var p = 0; p < particleCount; p++) {
 
+
             // create a particle with random
             // position values, -250 -> 250
             var pX = Math.random() * 100 - 50,
@@ -126,18 +95,22 @@
                 ;
 
             particle.cust_pos = new THREE.Vector3(pX, pY, pZ);
-            particle.cust_spring = {force:0.08};
+            particle.cust_spring = {force:0.008};
             particle.cust_dir = new THREE.Vector3();
 
+            particles.colors.push(new THREE.Color(Math.floor(Math.random()*0xFFFFFF)));
             // add it to the geometry
             particles.vertices.push(particle);
         }
 
 // create the particle system
-        particleSystem = new THREE.ParticleSystem(
+        particleSystem = new THREE.PointCloud(
             particles,
             pMaterial);
 
+        particleSystem.color1 = new THREE.Color(Math.floor(Math.random()*0xFFFFFF));
+        particleSystem.color2 = new THREE.Color(Math.floor(Math.random()*0xFFFFFF));
+       // console.log(particleSystem.color1, particleSystem.color2);
         particleSystem.sortParticles = true;
 
         verts = particles.vertices;
@@ -146,50 +119,6 @@
         parent.add(particleSystem);
     }
 
-    function partitionCube(pos, size, num, parent) {
-        var c = new THREE.Vector3(pos.x-size/2.0, pos.y-size/2.0, pos.z-size/2.0);
-        var cur = new THREE.Vector3(c.x, c.y, c.z);
-        var delta = size / num;
-        console.log(delta);
-        for (var x = 0; x < num; x++) {
-            for (var y = 0; y < num; y++) {
-                for (var z = 0; z < num; z++) {
-                    cur = new THREE.Vector3(c.x+delta*x, c.y+delta*y, c.z+delta*z);
-                    var doCube = Math.random() < 1.1;
-                    if (doCube) {
-                        //var geometry = new THREE.BoxGeometry(delta, delta, delta);
-                        //var geometry = new THREE.DodecahedronGeometry( delta  );
-                        var geometry = new THREE.SphereGeometry( delta, 32,32 );
-                       //var geometry = new THREE.OctahedronGeometry( delta*0.707 );
-                        //var geometry = new THREE.IcosahedronGeometry( delta*0.707 );
-                        var spMat2 = new THREE.MeshPhongMaterial({
-                            // light
-                            specular: '#1001aa',
-                            // intermediate
-                            color: '#1001ff',
-                            // dark
-                            emissive: '#006063',
-                            shininess: 5
-                        });
-                        //var spMat2 = new THREE.MeshLambertMaterial({color: colors[Math.floor(Math.random()*10)]});
-                        spMat2.shading = THREE.NoShading;
-                        spMat2.emissive.setHex( colors[Math.floor(Math.random()*10)] );
-                        //var material = new THREE.MeshBasicMaterial({color: 0x00ff00});
-                        var cube = new THREE.Mesh(geometry, spMat2);
-                        //geometry.position.set(new THREE.Vector3(cur.x, cur.y, cur.z));
-                        cube.applyMatrix( new THREE.Matrix4().makeTranslation(cur.x,cur.y, cur.z) );
-                        cube.cust_size = delta/2;
-                        cube.cust_pos = new THREE.Vector3(cur.x,cur.y, cur.z);
-                        cube.cust_spring = {force:0.08};
-                        cube.cust_dir = new THREE.Vector3();
-                        //cube.lookAt(new THREE.Vector3(Math.random(),Math.random(),Math.random()));
-                        parent.add(cube);
-                        objs.push(cube);
-                    }
-                }
-            }
-        }
-    }
     var colors = [];
     var light, light2;
     function init() {
@@ -292,14 +221,16 @@
 
     function onMouseDown( event ) {
         makeSmaller();
+        uuu = 0.0;
         //toggleGrav = !toggleGrav;
-        jumpPusher(pushers[0]);
-        console.log("test");
+        //jumpPusher(pushers[0]);
+        particleSystem.color1 = new THREE.Color(Math.floor(Math.random()*0xFFFFFF));
+        particleSystem.color2 = new THREE.Color(Math.floor(Math.random()*0xFFFFFF));
     }
 
 var lastJumpTime = 0;
 var lastColorTime = 0;
-
+var uuu = 0;
     function animate() {
         for (var q = pushers.length; q--;) {
             var pusher = pushers[q];
@@ -369,6 +300,10 @@ var lastColorTime = 0;
 
                 obj.cust_dir.multiplyScalar(0.9);
 
+                uuu = Math.max(uuu, obj.cust_dir.length());
+
+                particleSystem.geometry.colors[b] = particleSystem.color1.lerp(particleSystem.color2, obj.cust_dir.length()/5.0);
+
                 //cube.cust_dir = new THREE.Vector3();
 
                 obj.x += obj.cust_dir.x;
@@ -376,11 +311,13 @@ var lastColorTime = 0;
                 obj.z += obj.cust_dir.z;
             }
         }
+        particleSystem.geometry.colorsNeedUpdate = true;
         particleSystem.geometry.verticesNeedUpdate = true;
 
         /*
-
+conole
             */
+//console.log(uuu);
 
         requestAnimationFrame( animate );
 
@@ -408,7 +345,7 @@ var lastColorTime = 0;
         camera.position.y = -200;// THREE.Math.clamp( camera.position.y + ( - ( mouseY - 200 ) - camera.position.y ) * .05, 50, 1000 );
         camera.position.z = 200;
 
-        theta += 0.5;
+        theta += 2.5;
         beta += 0.5;
         gamma -= 0.8;
 
