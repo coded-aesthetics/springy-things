@@ -34,20 +34,118 @@
     var blobChildren = [];
     var first = true;
     var raycaster= new THREE.Raycaster();
-    console.log(raycaster);
+
     var INTERSECTED;
 
     window.onresize = function () {
 			SCREEN_WIDTH = window.innerWidth;
-			SCREEN_HEIGHT = window.innerHeight-4;
+			SCREEN_HEIGHT = window.innerHeight;
 			camera = new THREE.PerspectiveCamera( 35, SCREEN_WIDTH / SCREEN_HEIGHT, 1, 25000 );
         camera.position.z = 200;
 			renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
 		};
 
     var objs = [];
-    var pusher = {pos:new THREE.Vector3(-22, -22, 0), force:30000.0};
-    var pusher2 = {pos:new THREE.Vector3(40.0, -30.0, 55.0), force:30000.0};
+    var pusher1 = {pos:new THREE.Vector3(-22, -22, 0), force:30000.0, lastJumpTime:0.0, changeInterval:300};
+    var pusher2 = {pos:new THREE.Vector3(40.0, -30.0, 55.0), force:30000.0, lastJumpTime:0.0, changeInterval:777};
+    var pusher3 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:555};
+    var pusher4 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:1111};
+    var pusher5 = {pos:new THREE.Vector3(0, 0, -15.0), force:15000.0, lastJumpTime:0.0, changeInterval:111};
+
+   var pushers = [pusher1, pusher2, pusher3];
+
+    var cubey;
+
+    function buildCube(pos, size, num, parent) {
+        var geometry = new THREE.BoxGeometry( size, size, size, num, num, num );
+        //var geometry = new THREE.SphereGeometry( delta, 32,32 );
+        //var geometry = new THREE.OctahedronGeometry( size );
+        //var geometry = new THREE.IcosahedronGeometry( delta*0.707 );
+        var spMat2 = new THREE.MeshPhongMaterial({
+            // light
+            specular: '#1001aa',
+            // intermediate
+            color: '#1001ff',
+            // dark
+            emissive: '#006063',
+            shininess: 5
+        });
+        //var spMat2 = new THREE.MeshLambertMaterial({color: colors[Math.floor(Math.random()*10)]});
+        spMat2.shading = THREE.NoShading;
+        spMat2.emissive.setHex( colors[Math.floor(Math.random()*10)] );
+
+        var cube = new THREE.Mesh(geometry, spMat2);
+
+        parent.add(cube);
+
+        for (var b = geometry.vertices.length; b--;) {
+            var cur = geometry.vertices[b];
+            cur.cust_pos = new THREE.Vector3(cur.x, cur.y, cur.z);
+            cur.cust_dir = new THREE.Vector3();
+            cur.cust_spring = {force:0.08};
+        }
+        objs = geometry.vertices;
+        geometry.dynamic = true;
+
+        cubey = cube;
+    }
+    var particleSystem;
+    var verts;
+
+    function cubeSystem(pos, size, num, parent) {
+        // create the particle variables
+        var particleCount = 1500,
+            particles = new THREE.Geometry(),
+        // create the particle variables
+            pMaterial = new THREE.PointCloudMaterial({
+            color: Math.floor(Math.random()*0xFFFFFF),
+            size: 15,
+            map: THREE.ImageUtils.loadTexture(
+                "img/particle.png"
+            ),
+            blending: THREE.AdditiveBlending,
+            transparent: true
+        });
+
+        pMaterial.depthWrite = false;
+
+// also update the particle system to
+// sort the particles which enables
+// the behaviour we want
+
+        // now create the individual particles
+        for (var p = 0; p < particleCount; p++) {
+
+            // create a particle with random
+            // position values, -250 -> 250
+            var pX = Math.random() * 100 - 50,
+                pY = Math.random() * 100 - 50,
+                pZ = Math.random() * 100 - 50,
+                particle =
+                    new THREE.Vector3(pX, pY, pZ)
+                ;
+
+            particle.cust_pos = new THREE.Vector3(pX, pY, pZ);
+            particle.cust_spring = {force:0.08};
+            particle.cust_dir = new THREE.Vector3();
+
+            // add it to the geometry
+            particles.vertices.push(particle);
+        }
+
+// create the particle system
+        particleSystem = new THREE.ParticleSystem(
+            particles,
+            pMaterial);
+
+        particleSystem.sortParticles = true;
+
+        verts = particles.vertices;
+
+// add it to the scene
+        parent.add(particleSystem);
+    }
+
     function partitionCube(pos, size, num, parent) {
         var c = new THREE.Vector3(pos.x-size/2.0, pos.y-size/2.0, pos.z-size/2.0);
         var cur = new THREE.Vector3(c.x, c.y, c.z);
@@ -122,7 +220,7 @@
         scene = new THREE.Scene();
 
 
-        partitionCube(new THREE.Vector3(0,0,0), 60, 5, scene);
+        cubeSystem(new THREE.Vector3(0, 0, 0), 60, 24, scene);
 
 
 
@@ -143,7 +241,7 @@
 
         // RENDERER
         renderer.setSize( SCREEN_WIDTH, SCREEN_HEIGHT );
-        renderer.setClearColor( 0xf2f7ff, 1 );
+        renderer.setClearColor( 0x000000, 1 );
         renderer.autoClear = false;
 
         renderer.domElement.style.position = "relative";
@@ -185,92 +283,100 @@
 
     var toggleGrav = true;
 
-    function jumpPusher() {
-        pusher.pos.x = Math.random() * -88.0 + 44.0;
-        pusher.pos.y = Math.random() * -88.0 + 44.0;
-        pusher.force = (Math.random() * 500000 - 250000)/2.0;
+    function jumpPusher(pusher) {
+        pusher.pos.x = Math.random() * 100 - 50;
+        pusher.pos.y = Math.random() * 100 - 50;
+        pusher.pos.z = Math.random() * 100 - 50;
+        pusher.force = (Math.random() * 100000.0 - 50000);
     }
 
     function onMouseDown( event ) {
         makeSmaller();
         //toggleGrav = !toggleGrav;
-        jumpPusher();
+        jumpPusher(pushers[0]);
+        console.log("test");
     }
 
 var lastJumpTime = 0;
 var lastColorTime = 0;
 
     function animate() {
-        var thisTime = new Date().getTime();
-        var deltaTime = thisTime - lastTime;
-        timePassed += deltaTime;
-        delta += 0.1;
-        if (timePassed -lastJumpTime > 4000) {
-            jumpPusher();
-            lastJumpTime = timePassed;
-        }
-        if (timePassed -lastJumpTime > 3000) {
-            pusher.force = 0;
-        }
-        var changeColors = false;
-        if (timePassed -lastColorTime > 15000) {
-            changeColors = true;
-            lastColorTime = timePassed;
-            colors = [];
-            for (var i = 3; i--;) {
-                colors.push(Math.floor(Math.random()*0xFFFFFF));
+        for (var q = pushers.length; q--;) {
+            var pusher = pushers[q];
+            var thisTime = new Date().getTime();
+            var deltaTime = thisTime - lastTime;
+            timePassed += deltaTime;
+            delta += 0.1;
+            if (timePassed - pusher.lastJumpTime > pusher.changeInterval) {
+                jumpPusher(pusher);
+                pusher.lastJumpTime = timePassed;
+            }
+            if (timePassed - pusher.lastJumpTime > 3000) {
+                //pusher.force = 0;
+            }
+            var changeColors = false;
+            if (timePassed - lastColorTime > 15000) {
+                changeColors = true;
+                lastColorTime = timePassed;
+                colors = [];
+                for (var i = 3; i--;) {
+                    colors.push(Math.floor(Math.random() * 0xFFFFFF));
+                }
+            }
+            for (var b = verts.length; b--;) {
+                var obj = verts[b];
+                scene.updateMatrixWorld();
+
+                if (changeColors) {
+                    //obj.material.emissive.setHex(colors[Math.floor(Math.random()*colors.length)]);
+                }
+
+                var vector = obj;
+                //vector.setFromMatrixPosition( obj.matrixWorld );
+
+                //pusher.pos.x += 0.02;
+                //pusher.pos.y += 0.02;
+
+                if (pusher.pos.x > 22) {
+                    pusher.pos.x = Math.random() * -88.0 + 44.0;
+                    pusher.pos.y = Math.random() * -88.0 + 44.0;
+                }
+
+                var root = obj.cust_pos;
+
+                var distVec = new THREE.Vector3(vector.x - pusher.pos.x, vector.y - pusher.pos.y, vector.z - pusher.pos.z);
+                var distRoot = new THREE.Vector3(root.x - vector.x, root.y - vector.y, root.z - vector.z);
+                var dist2 = distVec.x * distVec.x + distVec.y * distVec.y + distVec.z * distVec.z;
+                var dist3 = distRoot.x * distRoot.x + distRoot.y * distRoot.y + distRoot.z * distRoot.z;
+                if (dist2 <= 600) dist2 = 600;
+                //if (dist3 <= 1) dist3 = 1;
+                var force1 = pusher.force /** (Math.sin(delta)+1)*/ / dist2;
+                if (!toggleGrav) {
+                    force1 = 0.0;
+                }
+                var force2 = obj.cust_spring.force * dist3;
+                var force = (force2 - force1) / 1000.0 * deltaTime;
+
+                distRoot.normalize().multiplyScalar(force2 / 1000.0 * deltaTime);
+                distVec.normalize().multiplyScalar(force1 / 1000.0 * deltaTime);
+
+                //if (b==10)console.log(force1, force2);
+                // var dist = Math.sqrt(dist2);
+                // console.log(force);
+
+                obj.cust_dir = new THREE.Vector3(obj.cust_dir.x + distVec.x + distRoot.x,
+                        obj.cust_dir.y + distVec.y + distRoot.y, obj.cust_dir.z + distVec.z + distRoot.z);
+
+                obj.cust_dir.multiplyScalar(0.9);
+
+                //cube.cust_dir = new THREE.Vector3();
+
+                obj.x += obj.cust_dir.x;
+                obj.y += obj.cust_dir.y;
+                obj.z += obj.cust_dir.z;
             }
         }
-        for (var b = objs.length; b--;) {
-            var obj = objs[b];
-            scene.updateMatrixWorld();
-
-            if (changeColors) {
-                obj.material.emissive.setHex(colors[Math.floor(Math.random()*colors.length)]);
-            }
-
-            var vector = new THREE.Vector3();
-            vector.setFromMatrixPosition( obj.matrixWorld );
-
-            pusher.pos.x +=0.02;
-            pusher.pos.y +=0.02;
-
-            if (pusher.pos.x > 22) {
-                pusher.pos.x = Math.random() * -88.0 + 44.0;
-                pusher.pos.y = Math.random() * -88.0 + 44.0;
-            }
-
-            var root = obj.cust_pos;
-
-            var distVec = new THREE.Vector3(vector.x-pusher.pos.x,vector.y-pusher.pos.y,vector.z-pusher.pos.z);
-            var distRoot = new THREE.Vector3(root.x-vector.x,root.y-vector.y,root.z-vector.z);
-            var dist2 = distVec.x*distVec.x+distVec.y*distVec.y+distVec.z*distVec.z;
-            var dist3 = distRoot.x*distRoot.x+distRoot.y*distRoot.y+distRoot.z*distRoot.z;
-            if (dist2 <= 600) dist2 = 600;
-            //if (dist3 <= 1) dist3 = 1;
-            var force1 = pusher.force /** (Math.sin(delta)+1)*/ / dist2;
-            if(!toggleGrav) {
-                force1 = 0.0;
-            }
-            var force2 = obj.cust_spring.force * dist3;
-            var force = (force2 - force1) / 1000.0 * deltaTime;
-
-            distRoot.normalize().multiplyScalar(force2/1000.0*deltaTime);
-            distVec.normalize().multiplyScalar(force1/1000.0*deltaTime);
-
-            //if (b==10)console.log(force1, force2);
-           // var dist = Math.sqrt(dist2);
-           // console.log(force);
-
-            obj.cust_dir = new THREE.Vector3(obj.cust_dir.x+distVec.x+distRoot.x,
-                    obj.cust_dir.y+distVec.y+distRoot.y, obj.cust_dir.z+distVec.z+distRoot.z);
-
-            obj.cust_dir.multiplyScalar(0.9);
-
-            //cube.cust_dir = new THREE.Vector3();
-
-            obj.applyMatrix( new THREE.Matrix4().makeTranslation(obj.cust_dir.x,obj.cust_dir.y,obj.cust_dir.z) );
-        }
+        particleSystem.geometry.verticesNeedUpdate = true;
 
         /*
 
@@ -291,7 +397,7 @@ var lastColorTime = 0;
     var oldLookAt = new THREE.Vector3(0,0,0);
     var lookAtDist = new THREE.Vector3(0,0,0);
     var theta = 45;
-    var radius = 200;
+    var radius = 80;
     var radius2 = 100;
     var beta = 33;
     var gamma = 33;
@@ -359,7 +465,7 @@ var lastColorTime = 0;
             timeNewLookAt = timePassed;
 
             lookAtDist = new THREE.Vector3(newLookAt.x-lookAt.x,newLookAt.y-lookAt.y,newLookAt.z-lookAt.z);
-            if ( INTERSECTED != intersects[ 0 ].object ) {
+            if ( false && INTERSECTED != intersects[ 0 ].object ) {
 
                if ( INTERSECTED ) INTERSECTED.material.emissive.setHex( INTERSECTED.currentHex );
 
