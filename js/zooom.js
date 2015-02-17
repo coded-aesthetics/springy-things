@@ -61,7 +61,7 @@
 
     function cubeSystem(pos, size, num, parent) {
         // create the particle variables
-        var particleCount = 2500,
+        var particleCount = 1500,
             particles = new THREE.Geometry(),
         // create the particle variables
             pMaterial = new THREE.PointCloudMaterial({
